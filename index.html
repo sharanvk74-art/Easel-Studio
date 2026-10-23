@@ -310,11 +310,11 @@ function softStops(g,h){for(let i=0;i<=12;i++){const t=i/12;let a;if(t<=h)a=1;el
 function makeTips(kind,hard){
  const out=[],variants=['pencil','chalk','spray','bristle','wet','flat','grass','cloud'].includes(kind)?4:1;
  for(let v=0;v<variants;v++){
-  const S=kind==='pencil'?64:128,c=mk(S,S),x=c.getContext('2d'),r=S/2;c._id=++tipId;x.fillStyle='#fff';
+  const S=kind==='pencil'?128:256,c=mk(S,S),x=c.getContext('2d'),r=S/2;c._id=++tipId;x.fillStyle='#fff';
   if(kind==='round'||kind==='soft'){const g=x.createRadialGradient(r,r,0,r,r,r);softStops(g,Math.min(hard,1-3/S));x.fillStyle=g;x.fillRect(0,0,S,S)}
   else if(kind==='pencil'){x.beginPath();x.arc(r,r,r-1,0,TAU);x.fill();const d=x.getImageData(0,0,S,S),p=d.data;for(let i=3;i<p.length;i+=4)if(p[i])p[i]*=.25+.75*Math.random()**1.6;x.putImageData(d,0,0)}
   else if(kind==='chalk'){for(let i=0;i<260;i++){const a=Math.random()*TAU,rr=r*.9*Math.sqrt(Math.random());x.globalAlpha=.25+.7*Math.random();x.beginPath();x.arc(r+Math.cos(a)*rr,r+Math.sin(a)*rr,r*(.04+.09*Math.random()),0,TAU);x.fill()}}
-  else if(kind==='spray'){for(let i=0;i<70;i++){const a=Math.random()*TAU,rr=r*.94*Math.sqrt(Math.random());x.globalAlpha=.6+.4*Math.random();x.beginPath();x.arc(r+Math.cos(a)*rr,r+Math.sin(a)*rr,1+Math.random()*2.6,0,TAU);x.fill()}}
+  else if(kind==='spray'){for(let i=0;i<70;i++){const a=Math.random()*TAU,rr=r*.94*Math.sqrt(Math.random());x.globalAlpha=.6+.4*Math.random();x.beginPath();x.arc(r+Math.cos(a)*rr,r+Math.sin(a)*rr,(1+Math.random()*2.6)*S/128,0,TAU);x.fill()}}
   else if(kind==='bristle'){const n=30;for(let i=0;i<n;i++){const y=r+(i/(n-1)*2-1)*r*.86+(Math.random()-.5)*4,rr=r*(.05+.07*Math.random());x.globalAlpha=.35+.65*Math.random();x.beginPath();x.ellipse(r+(Math.random()-.5)*r*.3,y,rr*1.8,rr,0,0,TAU);x.fill()}}
   else if(kind==='wet'){const g=x.createRadialGradient(r,r,0,r,r,r);g.addColorStop(0,'rgba(255,255,255,.35)');g.addColorStop(.7,'rgba(255,255,255,.5)');g.addColorStop(.9,'rgba(255,255,255,.78)');g.addColorStop(1,'rgba(255,255,255,0)');x.fillStyle=g;x.beginPath();for(let k=0;k<=24;k++){const a=k/24*TAU,rr=r*(.8+.2*Math.random());k?x.lineTo(r+Math.cos(a)*rr,r+Math.sin(a)*rr):x.moveTo(r+rr,r)}x.closePath();x.fill()}
   else if(kind==='flat'){const n=18,hw=S*.13;for(let i=0;i<n;i++){const y0=S*.04+i/n*S*.92;x.globalAlpha=.4+.6*Math.random();x.fillRect(r-hw,y0,hw*2,S*.92/n*(.6+.5*Math.random()))}}
@@ -322,7 +322,7 @@ function makeTips(kind,hard){
   else if(kind==='grass'){const n=5+(Math.random()*3|0);for(let i=0;i<n;i++){const bx=r+(Math.random()-.5)*S*.35,top=S*(.05+.3*Math.random()),lean=(Math.random()-.5)*S*.5;x.globalAlpha=.75+.25*Math.random();x.beginPath();x.moveTo(bx-S*.035,S);x.quadraticCurveTo(bx+lean*.3,S*.55,bx+lean,top);x.quadraticCurveTo(bx+lean*.3+S*.02,S*.55,bx+S*.035,S);x.fill()}}
   else if(kind==='star'){const g=x.createRadialGradient(r,r,0,r,r,r*.45);g.addColorStop(0,'rgba(255,255,255,.9)');g.addColorStop(1,'rgba(255,255,255,0)');x.fillStyle=g;x.fillRect(0,0,S,S);x.fillStyle='#fff';x.beginPath();for(let k=0;k<8;k++){const a=k*Math.PI/4,rr=k%2?r*.12:r*.95;x.lineTo(r+Math.cos(a)*rr,r+Math.sin(a)*rr)}x.closePath();x.fill()}
   else if(kind==='cloud'){for(let i=0;i<9;i++){const a=Math.random()*TAU,d=r*.4*Math.random(),cr=r*(.25+.25*Math.random()),cx=r+Math.cos(a)*d,cy=r+Math.sin(a)*d*.7,g=x.createRadialGradient(cx,cy,0,cx,cy,cr);g.addColorStop(0,'rgba(255,255,255,.55)');g.addColorStop(1,'rgba(255,255,255,0)');x.fillStyle=g;x.fillRect(0,0,S,S)}}
-  out.push(c)}
+  out.push(buildMips(c))}
  return out}
 /* paper grain: tileable noise; where it is opaque, paint is knocked out */
 const GRAIN=(()=>{const N=256,c=mk(N,N),x=c.getContext('2d'),id=x.createImageData(N,N),d=id.data,a=new Float32Array(N*N);for(let i=0;i<a.length;i++)a[i]=Math.random();
@@ -332,17 +332,21 @@ const GRAIN=(()=>{const N=256,c=mk(N,N),x=c.getContext('2d'),id=x.createImageDat
 function applyGrain(x,amount,r){if(!x._gp)x._gp=x.createPattern(GRAIN,'repeat');x.save();x.globalCompositeOperation='destination-out';x.globalAlpha=amount;x.fillStyle=x._gp;if(r)x.fillRect(r.x,r.y,r.w,r.h);else x.fillRect(0,0,x.canvas.width,x.canvas.height);x.restore()}
 const tipStore=new Map(),tintStore=new Map();
 function tipsFor(b){if(b.tip==='pixel')return null;const key=b.tip+((b.tip==='round'||b.tip==='soft')?'|'+(+b.hard).toFixed(2):'');let t=tipStore.get(key);if(!t){t=makeTips(b.tip,+b.hard);tipStore.set(key,t)}return t}
-function tinted(tip,color){const k=tip._id+color;let c=tintStore.get(k);if(!c){if(tintStore.size>160)tintStore.clear();c=mk(tip.width,tip.height);const x=c.getContext('2d');x.drawImage(tip,0,0);x.globalCompositeOperation='source-in';x.fillStyle=color;x.fillRect(0,0,c.width,c.height);tintStore.set(k,c)}return c}
+/* pre-shrunk copies of each tip so small dabs stay crisp instead of aliasing */
+function buildMips(c){const m=[c];let p=c;while(p.width>4){const n=mk(Math.max(2,p.width>>1),Math.max(2,p.height>>1)),x=n.getContext('2d');x.imageSmoothingEnabled=true;x.imageSmoothingQuality='high';x.drawImage(p,0,0,n.width,n.height);n._id=++tipId;m.push(n);p=n}c._mips=m;return c}
+function tinted(tip,color){const k=tip._id+color;let c=tintStore.get(k);if(!c){if(tintStore.size>500)tintStore.clear();c=mk(tip.width,tip.height);const x=c.getContext('2d');x.drawImage(tip,0,0);x.globalCompositeOperation='source-in';x.fillStyle=color;x.fillRect(0,0,c.width,c.height);tintStore.set(k,c)}return c}
 function stampDab(ctx,b,tips,color,x,y,s,ang,a,rnd){
  if(!tips){const q=Math.max(1,Math.round(s));ctx.globalAlpha=a;ctx.fillStyle=color;ctx.fillRect(Math.round(x-q/2),Math.round(y-q/2),q,q);ctx.globalAlpha=1;return}
- const tip=tinted(tips[tips.length>1?(Math.random()*tips.length|0):0],color);
+ if(s<1.5){a*=s/1.5;s=1.5}
+ const base=tips[tips.length>1?(Math.random()*tips.length|0):0],mm=base._mips||[base];let lv=mm[0];for(let i=mm.length-1;i>=0;i--){if(mm[i].width>=s){lv=mm[i];break}}
+ const tip=tinted(lv,color);
  const sx=s/tip.width,sy=s*(rnd??b.roundness)/tip.height,cs=Math.cos(ang),sn=Math.sin(ang);
  ctx.globalAlpha=a;ctx.setTransform(cs*sx,sn*sx,-sn*sy,cs*sy,x,y);ctx.drawImage(tip,-tip.width/2,-tip.height/2);ctx.setTransform(1,0,0,1,0,0);ctx.globalAlpha=1}
-const tailLen=(b,size)=>Math.max(8,size*6*b.taper);
+const tailLen=(b,size)=>Math.max(8,size*6*b.taper),endLen=(b,size)=>Math.max(6,size*3.5*b.taper);
 function dabParams(b,size,pr,dist,dir,tilt=0,ef=1){
  let s=size*(1-b.sizeP+b.sizeP*pr);
  if(b.taper>0){const tl=tailLen(b,size);if(dist<tl)s*=.15+.85*(dist/tl)}
- if(ef<1)s*=.12+.88*ef;
+ if(ef<1)s*=.04+.96*Math.pow(ef,.8);
  if(b.jitterS)s*=1+(Math.random()*2-1)*b.jitterS;
  let a=clamp(b.flow*(1-b.opP+b.opP*pr),0,1),rnd=b.roundness;
  if(b.tiltK&&tilt>0){const t=tilt*b.tiltK;s*=1+t*1.4;a*=1-t*.5;rnd*=1-t*.55}
@@ -363,7 +367,7 @@ function strokeInto(ctx,tmp,b,size,color,pts,opacity){
  const tx=tmp.getContext('2d');tx.clearRect(0,0,tmp.width,tmp.height);const tips=tipsFor(b),dabs=[];
  const w=new Walker(spacingFn(b,size),(x,y,p,dir,dist)=>dabs.push([x,y,p,dir,dist]));
  for(const q of pts)w.add(q.x,q.y,q.p);
- const total=dabs.length?dabs[dabs.length-1][4]:0,tail=b.taper>0?Math.min(tailLen(b,size),Math.max(1,total*.45)):0;
+ const total=dabs.length?dabs[dabs.length-1][4]:0,tail=b.taper>0?Math.min(endLen(b,size),Math.max(1,total*.45)):0;
  for(const[x,y,p,dir,dist]of dabs){const d=dabParams(b,size,p,dist,dir,0,tail?clamp((total-dist)/tail,0,1):1);stampDab(tx,b,tips,color,x+d.ox,y+d.oy,d.s,d.ang,d.a,d.rnd)}
  if(b.grain)applyGrain(tx,b.grain,null);
  const op=ctx.globalCompositeOperation;ctx.globalCompositeOperation=b.blend||'source-over';ctx.globalAlpha=opacity;ctx.drawImage(tmp,0,0);ctx.globalAlpha=1;ctx.globalCompositeOperation=op}
@@ -375,13 +379,13 @@ let uid=1;
 function newLayer(name){const c=mk();const id=uid++;return{id,name:name||('Layer '+id),canvas:c,ctx:c.getContext('2d'),visible:true,opacity:1,blend:'source-over',alphaLock:false,clip:false,thumbDirty:true,saveDirty:true,blob:null,thumbEl:null}}
 let pre,prx,buf,bctx,pv,pvx,comp,cctx,grp,gctx,selMask,smx,selOv,sox,gr2,g2x;
 function allocDoc(){gr2=mk();g2x=gr2.getContext('2d');pre=mk();prx=pre.getContext('2d');buf=mk();bctx=buf.getContext('2d');pv=mk();pvx=pv.getContext('2d');comp=mk();cctx=comp.getContext('2d');grp=mk();gctx=grp.getContext('2d');selMask=mk();smx=selMask.getContext('2d');selOv=mk();sox=selOv.getContext('2d')}
-const maxLayers=()=>clamp(Math.floor(700e6/(W*H*4)),6,25);
+const maxLayers=()=>clamp(Math.floor(450e6/(W*H*4)),6,25);
 function insertLayer(l,ref=doc.active){const i=doc.layers.indexOf(ref);doc.layers.splice(i<0?doc.layers.length:i+1,0,l);doc.active=l}
 function canAddLayer(){if(doc.layers.length>=maxLayers()){toast('Layer limit reached for this canvas size');return false}return true}
 
 /* ---------- history ---------- */
 const hist=[],redoS=[];
-const maxHist=()=>clamp(Math.floor(450e6/(W*H*4)),6,40);
+const maxHist=()=>clamp(Math.floor(320e6/(W*H*4)),6,40);
 function crop(src,x,y,w,h){const c=mk(w,h);c.getContext('2d').drawImage(src,x,y,w,h,0,0,w,h);return c}
 function captureStruct(){return{layers:doc.layers.slice(),props:doc.layers.map(l=>({name:l.name,visible:l.visible,opacity:l.opacity,blend:l.blend,alphaLock:l.alphaLock,clip:l.clip})),active:doc.active,bg:doc.bg,bgVisible:doc.bgVisible}}
 function restoreStruct(s){doc.layers=s.layers.slice();s.layers.forEach((l,i)=>{Object.assign(l,s.props[i]);l.thumbDirty=true});doc.active=s.active;doc.bg=s.bg;doc.bgVisible=s.bgVisible}
@@ -400,11 +404,11 @@ function redo(){
  if(stroke||tf||adj)return;const e=redoS.pop();if(!e){toast('Nothing to redo');return}
  hist.push(applyEntry(e));toast('Redo '+e.label);afterDocChange()}
 function afterDocChange(){needCompose=true;markSave();if(openPopId==='layers')renderLayers();requestRender()}
-function touchLayer(l){l.thumbDirty=true;l.saveDirty=true;needCompose=true;requestRender()}
+function touchLayer(l,r){l.thumbDirty=true;l.saveDirty=true;if(r){const c=clampR(r);if(c)dirtyR=uni(dirtyR,c)}else needCompose=true;requestRender()}
 
 /* ---------- view ---------- */
 const DPR=Math.min(2,window.devicePixelRatio||1);
-const stage=$('#stage'),view=$('#view'),vctx=view.getContext('2d');
+const stage=$('#stage'),view=$('#view'),vctx=view.getContext('2d',{desynchronized:true,alpha:false})||view.getContext('2d');
 let vw=800,vh=600,stageRect=stage.getBoundingClientRect();
 const V={cx:400,cy:300,s:1,r:0,flip:1};
 let Vm=new DOMMatrix(),Vi=new DOMMatrix();
@@ -419,16 +423,22 @@ const stripes=(()=>{const c=mk(12,12),x=c.getContext('2d');x.fillStyle='rgba(10,
 /* ---------- compose & render ---------- */
 let preview=null,needCompose=true,needRender=false,hover=null,eye=null,pendingShape=false;
 const layerSrc=l=>preview&&preview.layer===l?preview.canvas:l.canvas;
-function compose(){
- cctx.setTransform(1,0,0,1,0,0);cctx.globalCompositeOperation='source-over';cctx.globalAlpha=1;cctx.clearRect(0,0,W,H);
- if(doc.bgVisible){cctx.fillStyle=doc.bg;cctx.fillRect(0,0,W,H)}
+let dirtyR=null;
+const uni=(a,b)=>!a?b:!b?a:{x:Math.min(a.x,b.x),y:Math.min(a.y,b.y),w:Math.max(a.x+a.w,b.x+b.w)-Math.min(a.x,b.x),h:Math.max(a.y+a.h,b.y+b.h)-Math.min(a.y,b.y)};
+function clampR(r){const x=Math.max(0,Math.floor(r.x)),y=Math.max(0,Math.floor(r.y)),x2=Math.min(W,Math.ceil(r.x+r.w)),y2=Math.min(H,Math.ceil(r.y+r.h));return x2<=x||y2<=y?null:{x,y,w:x2-x,h:y2-y}}
+function ensureComposed(){if(needCompose){compose();needCompose=false;dirtyR=null}else if(dirtyR){compose(dirtyR);dirtyR=null}}
+/* recomposite only the rectangle that changed (the whole canvas when r is omitted) */
+function compose(r){
+ const X=r?r.x:0,Y=r?r.y:0,w=r?r.w:W,h=r?r.h:H,blit=(ctx,s)=>ctx.drawImage(s,X,Y,w,h,X,Y,w,h);
+ cctx.setTransform(1,0,0,1,0,0);cctx.globalCompositeOperation='source-over';cctx.globalAlpha=1;cctx.clearRect(X,Y,w,h);
+ if(doc.bgVisible){cctx.fillStyle=doc.bg;cctx.fillRect(X,Y,w,h)}
  const L=doc.layers;
  for(let i=0;i<L.length;i++){
   const base=L[i];let j=i+1;const clips=[];while(j<L.length&&L[j].clip){clips.push(L[j]);j++}
   if(base.visible&&base.opacity>0){
    let src=layerSrc(base);const vis=clips.filter(c=>c.visible&&c.opacity>0);
-   if(vis.length){gctx.globalCompositeOperation='source-over';gctx.globalAlpha=1;gctx.clearRect(0,0,W,H);gctx.drawImage(src,0,0);for(const c of vis){gctx.globalCompositeOperation='source-atop';gctx.globalAlpha=c.opacity;gctx.drawImage(layerSrc(c),0,0)}gctx.globalCompositeOperation='source-over';gctx.globalAlpha=1;src=grp}
-   cctx.globalAlpha=base.opacity;cctx.globalCompositeOperation=base.blend;cctx.drawImage(src,0,0)}
+   if(vis.length){gctx.globalCompositeOperation='source-over';gctx.globalAlpha=1;gctx.clearRect(X,Y,w,h);blit(gctx,src);for(const c of vis){gctx.globalCompositeOperation='source-atop';gctx.globalAlpha=c.opacity;blit(gctx,layerSrc(c))}gctx.globalCompositeOperation='source-over';gctx.globalAlpha=1;src=grp}
+   cctx.globalAlpha=base.opacity;cctx.globalCompositeOperation=base.blend;blit(cctx,src)}
   i=j-1}
  cctx.globalAlpha=1;cctx.globalCompositeOperation='source-over'}
 function requestRender(){if(!needRender){needRender=true;requestAnimationFrame(frame)}}
@@ -436,17 +446,17 @@ function markDirty(){needCompose=true;requestRender()}
 function frame(){
  needRender=false;
  if(pendingShape&&stroke&&stroke.shape)updateShape();
- if(stroke&&stroke.k!=='smudge'){buildStrokePreview();needCompose=true}
+ if(stroke&&stroke.k!=='smudge'){const r=buildStrokePreview();if(r)dirtyR=uni(dirtyR,r)}
  else if(tf){buildTfPreview();needCompose=true}
- if(needCompose){compose();needCompose=false}
+ ensureComposed();
  draw();
  if(openPopId==='layers')refreshThumbs()}
 function draw(){
  const c=vctx;c.setTransform(1,0,0,1,0,0);c.globalAlpha=1;c.globalCompositeOperation='source-over';c.fillStyle='#141418';c.fillRect(0,0,view.width,view.height);
  c.setTransform(DPR,0,0,DPR,0,0);const m=Vm;c.transform(m.a,m.b,m.c,m.d,m.e,m.f);
- c.save();c.shadowColor='rgba(0,0,0,.6)';c.shadowBlur=28;c.fillStyle='#000';c.fillRect(0,0,W,H);c.restore();
+ {const o=5/V.s;c.fillStyle='rgba(0,0,0,.45)';c.fillRect(o,o*1.6,W,H);c.fillStyle='#000';c.fillRect(0,0,W,H)}
  if(!doc.bgVisible){try{checker.setTransform(new DOMMatrix().scale(1/V.s))}catch(e){}c.fillStyle=checker;c.fillRect(0,0,W,H)}
- c.imageSmoothingEnabled=V.s<2.5;c.imageSmoothingQuality='high';c.drawImage(comp,0,0);c.imageSmoothingEnabled=true;
+ c.imageSmoothingEnabled=V.s<4;c.imageSmoothingQuality='high';c.drawImage(comp,0,0);c.imageSmoothingEnabled=true;
  const lw=1/V.s;
  if(hasSel&&!tf)c.drawImage(selOv,0,0);
  if(prefs.grid){const g=prefs.gridSize;if(g*V.s>=6){c.save();c.strokeStyle='rgba(110,150,255,.4)';c.lineWidth=lw;c.beginPath();for(let x=g;x<W;x+=g){c.moveTo(x,0);c.lineTo(x,H)}for(let y=g;y<H;y+=g){c.moveTo(0,y);c.lineTo(W,y)}c.stroke();c.restore()}}
@@ -488,16 +498,16 @@ function symPts(x,y,a){
  else if(sym.mode==='r'){const dx=x-cx,dy=y-cy;for(let k=1;k<sym.n;k++){const t=k*TAU/sym.n,c=Math.cos(t),s=Math.sin(t);o.push([cx+dx*c-dy*s,cy+dx*s+dy*c,a+t])}
   if(sym.mirror){const base=o.slice();for(const[px,py,pa]of base)o.push([2*cx-px,py,Math.PI-pa])}}
  return o}
-function growBB(s,x,y,sz){const r=sz/2+3;if(x-r<s.bb[0])s.bb[0]=x-r;if(y-r<s.bb[1])s.bb[1]=y-r;if(x+r>s.bb[2])s.bb[2]=x+r;if(y+r>s.bb[3])s.bb[3]=y+r}
+function growBB(s,x,y,sz){const r=sz/2+3;for(const b of [s.bb,s.fb]){if(x-r<b[0])b[0]=x-r;if(y-r<b[1])b[1]=y-r;if(x+r>b[2])b[2]=x+r;if(y+r>b[3])b[3]=y+r}}
 function bbRect(bb){const x=Math.max(0,Math.floor(bb[0])),y=Math.max(0,Math.floor(bb[1])),x2=Math.min(W,Math.ceil(bb[2])),y2=Math.min(H,Math.ceil(bb[3]));return x2<=x||y2<=y?null:{x,y,w:x2-x,h:y2-y}}
 function beginStroke(e,dp){
  const k=tool,b=toolBrush(k),size=toolSize(k),L=doc.active;
- const s=stroke={k,b,size,L,opacity:toolOpacity(k),tips:tipsFor(b),color:k==='erase'?'#000000':colorHex,sm:{x:dp.x,y:dp.y},raw:dp,pts:[{x:dp.x,y:dp.y}],prSum:0,prN:0,bb:[1e9,1e9,-1e9,-1e9],start:now(),moved:0,shape:null,ps:{},sx:e.clientX,sy:e.clientY,lastPr:1,q:[],tail:(b.taper>0&&k!=='smudge')?tailLen(b,size):0,tilt:0};
+ const s=stroke={k,b,size,L,opacity:toolOpacity(k),tips:tipsFor(b),color:k==='erase'?'#000000':colorHex,sm:{x:dp.x,y:dp.y},raw:dp,pts:[{x:dp.x,y:dp.y}],prSum:0,prN:0,bb:[1e9,1e9,-1e9,-1e9],fb:[1e9,1e9,-1e9,-1e9],start:now(),moved:0,shape:null,ps:{},sx:e.clientX,sy:e.clientY,lastPr:1,q:[],tail:(b.taper>0&&k!=='smudge')?Math.min(endLen(b,size),60/V.s):0,tilt:0};
  prx.clearRect(0,0,W,H);prx.drawImage(L.canvas,0,0);
  if(k==='smudge'){const n=Math.max(2,Math.ceil(size));s.S=mk(n,n);s.Sx=s.S.getContext('2d');s.M=mk(n,n);s.Mx=s.M.getContext('2d');s.Sx.drawImage(L.canvas,dp.x-n/2,dp.y-n/2,n,n,0,0,n,n);s.mtip=s.tips?tinted(s.tips[0],'#ffffff'):null}
- else{bctx.clearRect(0,0,W,H);preview={layer:L,canvas:pv};if(k==='paint')pushColorHistory()}
+ else{bctx.clearRect(0,0,W,H);pvx.globalAlpha=1;pvx.globalCompositeOperation='source-over';pvx.clearRect(0,0,W,H);pvx.drawImage(L.canvas,0,0);preview={layer:L,canvas:pv};if(k==='paint')pushColorHistory()}
  s.walker=new Walker(spacingFn(b,size),onDab);
- const pr=pressureOf(e,s.ps);s.tilt=s.ps.tilt||0;s.lastPr=pr;s.prSum+=pr;s.prN++;s.walker.add(dp.x,dp.y,pr);markDirty()}
+ const pr=pressureOf(e,s.ps);s.tilt=s.ps.tilt||0;s.lastPr=pr;s.prSum+=pr;s.prN++;s.walker.add(dp.x,dp.y,pr);requestRender()}
 function onDab(x,y,pr,dir,dist){
  const s=stroke;if(!s)return;dist=dist||0;
  if(s.k==='smudge'){const d=dabParams(s.b,s.size,pr,dist,dir);smudgeDab(x+d.ox,y+d.oy,pr);return}
@@ -507,26 +517,27 @@ function onDab(x,y,pr,dir,dist){
 function stampAt(s,q,ef){const d=dabParams(s.b,s.size,q[2],q[4],q[3],q[5],ef);for(const[px,py,pa]of symPts(q[0]+d.ox,q[1]+d.oy,d.ang)){stampDab(bctx,s.b,s.tips,s.color,px,py,d.s,pa,d.a,d.rnd);growBB(s,px,py,d.s)}}
 /* the last few dabs wait in a queue so the stroke end can taper once the pen lifts */
 function flushTail(s){const q=s.q;if(!q.length)return;const total=q[q.length-1][4],tail=Math.min(s.tail,Math.max(1,total*.45));for(const e of q)stampAt(s,e,clamp((total-e[4])/tail,0,1));s.q=[]}
-function strokeSource(s){if(!s.b.grain)return buf;const r=bbRect(s.bb);g2x.clearRect(0,0,W,H);if(!r)return gr2;g2x.drawImage(buf,r.x,r.y,r.w,r.h,r.x,r.y,r.w,r.h);applyGrain(g2x,s.b.grain,r);return gr2}
+function strokeSource(s,r){if(!s.b.grain)return buf;r=r||bbRect(s.bb);if(!r)return buf;g2x.clearRect(r.x,r.y,r.w,r.h);g2x.drawImage(buf,r.x,r.y,r.w,r.h,r.x,r.y,r.w,r.h);applyGrain(g2x,s.b.grain,r);return gr2}
 function smudgeDab(x,y,pr){
  const s=stroke,L=s.L,n=s.S.width,st=clamp(s.opacity*(.35+.65*pr),0,1),Mx=s.Mx;
  Mx.globalCompositeOperation='source-over';Mx.globalAlpha=1;Mx.clearRect(0,0,n,n);Mx.drawImage(s.S,0,0);
  if(s.mtip){Mx.globalCompositeOperation='destination-in';Mx.drawImage(s.mtip,0,0,n,n);Mx.globalCompositeOperation='source-over'}
  const lx=L.ctx;lx.globalAlpha=st;lx.globalCompositeOperation=L.alphaLock?'source-atop':'source-over';lx.drawImage(s.M,x-n/2,y-n/2);lx.globalAlpha=1;lx.globalCompositeOperation='source-over';
  s.Sx.globalAlpha=1-st*.9;s.Sx.drawImage(L.canvas,x-n/2,y-n/2,n,n,0,0,n,n);s.Sx.globalAlpha=1;
- growBB(s,x,y,n);touchLayer(L)}
+ growBB(s,x,y,n);touchLayer(L,{x:x-n/2-2,y:y-n/2-2,w:n+4,h:n+4})}
 function strokeMove(e){
  const s=stroke;const list=e.getCoalescedEvents?e.getCoalescedEvents():[];const evs=list.length?list:[e];
  for(const ev of evs){
   const p={x:ev.clientX-stageRect.left,y:ev.clientY-stageRect.top},dp=toDoc(p.x,p.y),pr=pressureOf(ev,s.ps);s.tilt=s.ps.tilt||0;
   s.moved=Math.max(s.moved,Math.hypot(ev.clientX-s.sx,ev.clientY-s.sy));
   if(s.shape){s.shapeCur=dp;pendingShape=true;continue}
-  const f=1-s.b.stream*.88;s.sm.x+=(dp.x-s.sm.x)*f;s.sm.y+=(dp.y-s.sm.y)*f;s.raw=dp;s.lastPr=pr;
+  const f=1-s.b.stream*.75;s.sm.x+=(dp.x-s.sm.x)*f;s.sm.y+=(dp.y-s.sm.y)*f;s.raw=dp;s.lastPr=pr;
   s.pts.push({x:s.sm.x,y:s.sm.y});s.prSum+=pr;s.prN++;s.walker.add(s.sm.x,s.sm.y,pr)}
- armQuickShape(e);markDirty()}
+ armQuickShape(e);requestRender()}
 function buildStrokePreview(){
- const s=stroke;maskBySel(bctx);pvx.globalAlpha=1;pvx.globalCompositeOperation='source-over';pvx.clearRect(0,0,W,H);pvx.drawImage(s.L.canvas,0,0);
- pvx.globalAlpha=s.opacity;pvx.globalCompositeOperation=s.k==='erase'?'destination-out':(s.L.alphaLock?'source-atop':(s.b.blend||'source-over'));pvx.drawImage(strokeSource(s),0,0);pvx.globalAlpha=1;pvx.globalCompositeOperation='source-over'}
+ const s=stroke,r=bbRect(s.fb);s.fb=[1e9,1e9,-1e9,-1e9];if(!r)return null;const{x,y,w,h}=r;
+ maskBySel(bctx,r);pvx.globalAlpha=1;pvx.globalCompositeOperation='source-over';pvx.clearRect(x,y,w,h);pvx.drawImage(s.L.canvas,x,y,w,h,x,y,w,h);
+ pvx.globalAlpha=s.opacity;pvx.globalCompositeOperation=s.k==='erase'?'destination-out':(s.L.alphaLock?'source-atop':(s.b.blend||'source-over'));pvx.drawImage(strokeSource(s,r),x,y,w,h,x,y,w,h);pvx.globalAlpha=1;pvx.globalCompositeOperation='source-over';return r}
 function endStroke(){
  const s=stroke;if(!s)return;clearTimeout(qsTimer);clearTimeout(holdTimer);
  if(!s.shape&&s.raw&&s.k!=='smudge'){for(let i=0;i<30;i++){const dx=s.raw.x-s.sm.x,dy=s.raw.y-s.sm.y;if(Math.hypot(dx,dy)<.5)break;s.sm.x+=dx*.5;s.sm.y+=dy*.5;s.walker.add(s.sm.x,s.sm.y,s.lastPr)}}
@@ -534,7 +545,7 @@ function endStroke(){
  stroke=null;const L=s.L,r=bbRect(s.bb);
  if(s.k==='smudge'){if(r)pushEntry({label:'Smudge',struct:null,pix:[{l:L,c:crop(pre,r.x,r.y,r.w,r.h),x:r.x,y:r.y}]});markDirty();return}
  if(r){maskBySel(bctx);pushEntry({label:s.k==='erase'?'Erase':(s.shape?'QuickShape':'Brush stroke'),struct:null,pix:[{l:L,c:crop(pre,r.x,r.y,r.w,r.h),x:r.x,y:r.y}]});
-  const x=L.ctx;x.globalAlpha=s.opacity;x.globalCompositeOperation=s.k==='erase'?'destination-out':(L.alphaLock?'source-atop':(s.b.blend||'source-over'));x.drawImage(strokeSource(s),0,0);x.globalAlpha=1;x.globalCompositeOperation='source-over';touchLayer(L)}
+  const x=L.ctx;x.globalAlpha=s.opacity;x.globalCompositeOperation=s.k==='erase'?'destination-out':(L.alphaLock?'source-atop':(s.b.blend||'source-over'));x.drawImage(strokeSource(s,r),r.x,r.y,r.w,r.h,r.x,r.y,r.w,r.h);x.globalAlpha=1;x.globalCompositeOperation='source-over';touchLayer(L)}
  bctx.clearRect(0,0,W,H);preview=null;markDirty()}
 function cancelStroke(){
  const s=stroke;if(!s)return;stroke=null;clearTimeout(qsTimer);clearTimeout(holdTimer);
@@ -561,7 +572,7 @@ function shapePoints(sh){const pts=[];
  else if(sh.type==='ellipse'){const per=TAU*Math.sqrt((sh.rx*sh.rx+sh.ry*sh.ry)/2),n=Math.max(48,Math.ceil(per/2));for(let i=0;i<=n+2;i++){const t=i/n*TAU-Math.PI/2;pts.push({x:sh.cx+Math.cos(t)*sh.rx,y:sh.cy+Math.sin(t)*sh.ry})}}
  else{const c=[[-1,-1],[1,-1],[1,1],[-1,1],[-1,-1],[1,-1]];for(let k=0;k<5;k++){const x1=sh.cx+c[k][0]*sh.rx,y1=sh.cy+c[k][1]*sh.ry,x2=sh.cx+c[k+1][0]*sh.rx,y2=sh.cy+c[k+1][1]*sh.ry,n=Math.max(2,Math.ceil(Math.hypot(x2-x1,y2-y1)/2)),lim=k===4?Math.min(n,6):n;for(let i=0;i<lim;i++)pts.push({x:x1+(x2-x1)*i/n,y:y1+(y2-y1)*i/n})}}
  return pts}
-function redrawShape(){const s=stroke,sh=s.shape;s.q=[];bctx.clearRect(0,0,W,H);s.bb=[1e9,1e9,-1e9,-1e9];s.walker=new Walker(spacingFn(s.b,s.size),onDab);for(const p of shapePoints(sh))s.walker.add(p.x,p.y,sh.pr);markDirty()}
+function redrawShape(){const s=stroke,sh=s.shape;s.q=[];bctx.clearRect(0,0,W,H);s.fb=s.bb.slice();s.bb=[1e9,1e9,-1e9,-1e9];s.walker=new Walker(spacingFn(s.b,s.size),onDab);for(const p of shapePoints(sh))s.walker.add(p.x,p.y,sh.pr);markDirty()}
 function updateShape(){pendingShape=false;const sh=stroke.shape,b=sh.base,p=stroke.shapeCur;
  if(sh.type==='line')sh.b={x:p.x,y:p.y};
  else{const d0=Math.hypot(sh.anchor.x-b.cx,sh.anchor.y-b.cy)||1,f=Math.hypot(p.x-b.cx,p.y-b.cy)/d0;sh.rx=b.rx*f;sh.ry=b.ry*f;if(b.rx===b.ry)sh.ry=sh.rx}
@@ -569,14 +580,14 @@ function updateShape(){pendingShape=false;const sh=stroke.shape,b=sh.base,p=stro
 
 /* ---------- eyedropper ---------- */
 let pendingEye=false;
-function eyeAt(x,y){if(needCompose){compose();needCompose=false}const p=toDoc(x,y);eye.x=x;eye.y=y;
+function eyeAt(x,y){ensureComposed();const p=toDoc(x,y);eye.x=x;eye.y=y;
  if(p.x>=0&&p.y>=0&&p.x<W&&p.y<H){const d=cctx.getImageData(p.x|0,p.y|0,1,1).data;if(d[3]>8)eye.cur=rgb2hex(d[0],d[1],d[2])}requestRender()}
 function setPendingEye(v){pendingEye=v;$('#bEye').classList.toggle('on',v)}
 
 /* ---------- fill (ColorDrop) ---------- */
 function floodFill(dp){
  if(!canPaint())return;const L=doc.active,x0=Math.floor(dp.x),y0=Math.floor(dp.y);if(x0<0||y0<0||x0>=W||y0>=H)return;
- if(fillOpts.all&&needCompose){compose();needCompose=false}
+ if(fillOpts.all)ensureComposed();
  const src=(fillOpts.all?cctx:L.ctx).getImageData(0,0,W,H).data,i0=(y0*W+x0)*4,tr=src[i0],tg=src[i0+1],tb=src[i0+2],ta=src[i0+3],tol=fillOpts.tol*2.55;
  const mask=new Uint8Array(W*H);
  const match=i=>{const p=i*4;return Math.abs(src[p+3]-ta)<=tol&&(ta===0&&src[p+3]===0||Math.abs(src[p]-tr)<=tol&&Math.abs(src[p+1]-tg)<=tol&&Math.abs(src[p+2]-tb)<=tol)};
@@ -601,7 +612,7 @@ function floodFill(dp){
 
 /* ---------- selection ---------- */
 let hasSel=false,selDraft=null,selKind='rect',selOp='new';
-function maskBySel(ctx){if(!hasSel)return;ctx.globalCompositeOperation='destination-in';ctx.drawImage(selMask,0,0);ctx.globalCompositeOperation='source-over'}
+function maskBySel(ctx,r){if(!hasSel)return;ctx.globalCompositeOperation='destination-in';if(r)ctx.drawImage(selMask,r.x,r.y,r.w,r.h,r.x,r.y,r.w,r.h);else ctx.drawImage(selMask,0,0);ctx.globalCompositeOperation='source-over'}
 function selPath(c,P){const a=P[0],z=P[P.length-1];
  if(selKind==='rect')c.rect(Math.min(a.x,z.x),Math.min(a.y,z.y),Math.abs(z.x-a.x),Math.abs(z.y-a.y));
  else if(selKind==='ellipse')c.ellipse((a.x+z.x)/2,(a.y+z.y)/2,Math.abs(z.x-a.x)/2,Math.abs(z.y-a.y)/2,0,0,TAU);
@@ -911,7 +922,7 @@ function setupPressureUI(){padDot=null;drawCurve();const pad=$('#pPad');if(!pad)
 let confirmNew=null;
 function renderGallery(){
  const p=$('#pop-gallery');const scr=[Math.round(vw*Math.min(2,DPR)),Math.round(vh*Math.min(2,DPR))];const sc=Math.min(1,2400/Math.max(...scr));
- const presets=[['Screen size',Math.round(scr[0]*sc),Math.round(scr[1]*sc)],['Square',2048,2048],['HD landscape',1920,1080],['Story portrait',1080,1920],['A4 · 150 dpi',1240,1754],['4:5 post',1440,1800],['Sketch',1600,1200],['Pixel art',128,128]];
+ const hd=Math.min(2800/Math.max(...scr),1.4),presets=[['Screen size · HD',Math.round(scr[0]*hd),Math.round(scr[1]*hd)],['Screen size',Math.round(scr[0]*sc),Math.round(scr[1]*sc)],['Square',2048,2048],['HD landscape',1920,1080],['Story portrait',1080,1920],['A4 · 150 dpi',1240,1754],['4:5 post',1440,1800],['Sketch',1600,1200],['Pixel art',128,128]];
  p.innerHTML=`<div class="pop-h"><b>New canvas</b></div>
  <p class="muted" style="margin:0 0 10px">A new canvas replaces the current painting. Export it first if you want to keep it. Your current work is saved in this browser automatically.</p>
  <div class="newgrid">${presets.map(([n,w,h],i)=>`<button class="litem" data-p="${i}" style="background:var(--panel-2)"><span>${confirmNew===i?'Tap again to replace':n}</span><small>${w}×${h}</small></button>`).join('')}</div>
@@ -968,7 +979,7 @@ function textDialog(){
   recStruct('Add text');const l=newLayer(text.split('\n')[0].slice(0,24)||'Text'),x=l.ctx;x.font=f;x.fillStyle=colorHex;x.textBaseline='middle';x.textAlign=align;
   const lines=text.split('\n'),lh=size*1.2,mw=Math.max(...lines.map(s=>x.measureText(s).width)),y0=H/2-(lines.length-1)*lh/2,xx=align==='center'?W/2:align==='left'?W/2-mw/2:W/2+mw/2;
   lines.forEach((s,i)=>x.fillText(s,xx,y0+i*lh));insertLayer(l);touchLayer(l);afterDocChange();setTool('transform')}}
-function exportImage(kind){if(needCompose){compose();needCompose=false}let url;
+function exportImage(kind){ensureComposed();let url;
  try{if(kind==='jpg'){const c=mk(),x=c.getContext('2d');x.fillStyle=doc.bg;x.fillRect(0,0,W,H);x.drawImage(comp,0,0);url=c.toDataURL('image/jpeg',.92)}else url=comp.toDataURL('image/png')}catch(e){toast('Could not export this canvas');return}
  showModal(`<h3>Your ${kind==='jpg'?'JPEG':'PNG'} (${W} × ${H})</h3><p class="muted">Tap Save to device to download it, or Share to send it to your gallery or another app.${kind==='png'&&!doc.bgVisible?' The background is transparent.':''}</p><img class="exp" src="${url}" alt="Exported painting"><div class="mrow"><button class="chip" id="cpImg">Copy image</button><button class="chip" id="shImg">Share</button><button class="chip" id="dlImg">Save to device</button><button class="chip pri" data-close>Done</button></div>`);
  const fname='easel-'+new Date().toISOString().slice(0,19).replace(/[:T]/g,'-')+'.'+(kind==='jpg'?'jpg':'png');
@@ -1122,7 +1133,7 @@ function drawSamples(layer){const n=BRUSHES.length,cols=W>H?4:3,rows=Math.ceil(n
 (async()=>{
  allocDoc();resize();setHex(colorHex);updateSide();
  const ok=await loadDoc();
- if(!ok){try{await Promise.race([document.fonts.ready,new Promise(r=>setTimeout(r,1200))])}catch(e){}const long=2000,a=Math.max(.5,Math.min(2,vw/Math.max(1,vh)));newDocument(a>=1?long:Math.round(long*a),a>=1?Math.round(long/a):long,true);toast('Brush samples are on their own layer. Hide or delete it in Layers.')}
+ if(!ok){try{await Promise.race([document.fonts.ready,new Promise(r=>setTimeout(r,1200))])}catch(e){}const long=clamp(Math.round(Math.max(vw,vh)*Math.max(1,DPR)*1.4),2000,2800),a=Math.max(.5,Math.min(2,vw/Math.max(1,vh)));newDocument(a>=1?long:Math.round(long*a),a>=1?Math.round(long/a):long,true);toast('Brush samples are on their own layer. Hide or delete it in Layers.')}
  else{fit();markDirty()}
  setTool('paint')})();
 })();

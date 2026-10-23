@@ -1,5 +1,5 @@
 // Easel Studio offline cache. Bump VERSION whenever you change index.html so users get the update.
-const VERSION = 'easel-v3';
+const VERSION = 'easel-v4';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './maskable-512.png'];
 
 self.addEventListener('install', e => {
